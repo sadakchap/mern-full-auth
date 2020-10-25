@@ -26,6 +26,7 @@ exports.signup = async (req, res) => {
     try {
         let user = await User.findOne({ email });
         if(user){
+            console.log('email');
             return res.status(400).json({
                 error: 'Email already taken!'
             });
@@ -50,7 +51,7 @@ exports.signup = async (req, res) => {
         };
         transporter.sendMail(mailOptions, function (err, info) {
             if (err) return res.status(400).json({ err });
-            else return res.status(200).json({ msg: "mail sent!" });
+            else return res.status(200).json({ message: "Please confirm your email" });
         });
 
     } catch (err) {

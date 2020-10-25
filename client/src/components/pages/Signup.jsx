@@ -49,6 +49,7 @@ const Signup = () => {
             })
             .catch((err) => {
                 console.log(err);
+                if(err.response.data.error) return toast.error(err.response.data.error)
                 return toast.error('Sorry, something went wrong!')
             })
     }
