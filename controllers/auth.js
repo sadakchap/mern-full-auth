@@ -35,7 +35,7 @@ exports.signup = async (req, res) => {
         user = await user.save();
 
         // generate token for activation mail
-        const token = jwt.sign({ user: user._id }, process.env.JWT_ACTIVATION_SECRET_KEY, { expiresIn: '15m' });
+        const token = jwt.sign({ user: user._id }, process.env.JWT_ACTIVATION_SECRET_KEY, { expiresIn: '1d' });
 
         const mailOptions = {
             from: process.env.EMAIL_FROM, // sender address
@@ -59,9 +59,29 @@ exports.signup = async (req, res) => {
     }
     
 };
+
 exports.signin = (req, res) => {
 
 };
 exports.signout = (req, res) => {
 
 };
+
+exports.activateUser = async (req, res) => {
+
+    const { token } = req.body;
+    if(token){
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_ACTIVATION_SECRET_KEY);
+            await User.findByIdAndUpdate(decoded.user, { is_verified: true }, { new: true });
+            return res.status(201).json({
+                message: 'email verified'
+            })
+        } catch (err) {
+            return res.status(401).json({
+                error: 'Expired token, resend confirmation email again!'
+            })
+        }
+
+    }
+}

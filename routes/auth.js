@@ -1,16 +1,13 @@
 const express = require('express');
-const { check } = require('express-validator');
 const router = express.Router();
-const { signup, signin, signout } = require('../controllers/auth');
+const { signup, signin, signout, activateUser } = require('../controllers/auth');
+const { validSignup } = require('../helpers/valid');
 
-router.post('/signup', [
-    check('name', 'Name field is required').not().isEmpty(),
-    check('email', 'Enter a valid email').isEmail(),
-    check('password', 'Password must be of 7 chars').isLength({ min: 7})
-], signup);
-
+router.post('/signup', validSignup, signup);
 router.post('/signin', signin);
 router.get('/signout', signout);
+
+router.post('/activate', activateUser);
 
 
 router.get('/test', (req, res) => {
