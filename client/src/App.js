@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
+import Activate from './components/pages/Activate';
 import Home from './components/pages/Home';
 import Signup from './components/pages/Signup';
 
@@ -8,6 +9,7 @@ function App() {
       <Switch>
         <Route path="/" component={Home} exact /> 
         <Route path="/signup" component={Signup} exact />
+        <Route path="/user/activate/:token" component={Activate} exact />
       </Switch>
     </Router>
   );
