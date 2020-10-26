@@ -24,8 +24,8 @@ const Activate = ({ match }) => {
                 setToken('');
                 toast.success(res.data.message);
                 setTimeout(() => {
-                    history.push('/');
-                }, 3000);
+                    history.push('/signin');
+                }, 5000);
             })
             .catch((err) => {
                 if(err.response)
