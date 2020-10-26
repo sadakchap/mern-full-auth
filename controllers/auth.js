@@ -113,4 +113,55 @@ exports.activateUser = async (req, res) => {
         }
 
     }
-}
+};
+
+exports.sendPasswordResetEmail = (req, res) => {
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+        return res.status(400).json({
+            error: errors.array()[0]["msg"]
+        });
+    }
+
+    const { email } = req.body;
+    User.findOne({ email }, (err, user) => {
+        if(err || !user){
+            return res.status(400).json({
+                error: 'Email is not registered yet!'
+            });
+        }
+
+        const token = jwt.sign({ user: user._id }, process.env.JWT_RESET_PASSWORD_SECRET_KEY, { expiresIn: '10m' });
+
+        return user.updateOne({
+            resetPasswordLink: token
+        }, (err, success) => {
+            if(err){
+                return res.status(400).json({
+                    error: 'Something went wrong'
+                });
+            }
+            const mailOptions = {
+                from: process.env.EMAIL_FROM, // sender address
+                to: user.email, // list of receivers
+                subject: "Password Reset Link", // Subject line
+                html:  `
+                    <h1>Please follow the instructions to reset your password</h1>
+                    <p>${process.env.CLIENT_URL}/user/password/reset/${token}</p>
+                    <hr/>
+                    <p>This email contains sensitive information, please do not share it with anyone</p>
+                    <p>${process.env.CLIENT_URL}</p>`
+            };
+            
+            transporter.sendMail(mailOptions, function (err, info) {
+                if (err){
+                    console.log('error sending email');
+                    return res.status(400).json({
+                        error: 'Couldn\'t send Password reset Link'
+                    });
+                }
+                else return res.status(200).json({ message: "Please, check your Inbox" });
+            });
+        });
+    });
+};
