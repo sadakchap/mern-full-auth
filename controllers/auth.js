@@ -61,6 +61,35 @@ exports.signup = async (req, res) => {
 };
 
 exports.signin = (req, res) => {
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+        return res.status(400).json({
+            error: errors.array()[0]["msg"]
+        });
+    }
+    const { email, password } = req.body;
+    User.findOne({ email }).exec((err, user) => {
+        if(err || !user){
+            return res.status(400).json({
+                error: 'Email not registered yet!'
+            });
+        }
+        if(!user.authenticate(password)){
+            return res.status(400).json({
+                error: 'Email & password do not match!'
+            });
+        }
+        const token = jwt.sign({ user: user._id }, process.env.JWT_AUTH_SECRET_KEY, { expiresIn: '7d' });
+        return res.status(200).json({
+            token,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+    })
 
 };
 exports.signout = (req, res) => {

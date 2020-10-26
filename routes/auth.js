@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { signup, signin, signout, activateUser } = require('../controllers/auth');
-const { validSignup } = require('../helpers/valid');
+const { validSignup, validSignin } = require('../helpers/valid');
 
 router.post('/signup', validSignup, signup);
-router.post('/signin', signin);
+router.post('/signin', validSignin,signin);
 router.get('/signout', signout);
 
 router.post('/activate', activateUser);
