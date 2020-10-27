@@ -5,6 +5,7 @@ const { validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const nodemailer = require('nodemailer');
 const _ = require('lodash');
+const axios = require('axios');
 
 // create transporter
 const transporter = nodemailer.createTransport({
@@ -93,6 +94,7 @@ exports.signin = (req, res) => {
     })
 
 };
+
 exports.signout = (req, res) => {
 
 };
@@ -235,6 +237,7 @@ exports.googleLoginController = (req, res) => {
                 }else{
                     let password = email + process.env.JWT_AUTH_SECRET_KEY;
                     user = new User({ name, email, password });
+                    user.is_verified = true;
                     user.save((err, save) => {
                         if(err){
                             return res.status(400).json({
@@ -256,4 +259,49 @@ exports.googleLoginController = (req, res) => {
             })
         }
     })
+};
+
+exports.facebookLoginController = (req, res) => {
+    const { userID, accessToken } = req.body;
+    const url = `https://graph.facebook.com/${userID}?fields=id,name,email&access_token=${accessToken}`;
+    return axios.get(url)
+        .then(response => {
+            const { email, name} = response.data;
+            User.findOne({ email }).exec((err, user) => {
+                if(user){
+                    const token = jwt.sign({ user: user._id }, process.env.JWT_AUTH_SECRET_KEY, { expiresIn: '7d' });
+                    const { _id, name, email, role } = user;
+                    return res.status(200).json({
+                        token,
+                        user: { _id, name, email, role }
+                    });
+                }else{
+                    let password = email + process.env.JWT_AUTH_SECRET_KEY;
+                    user = new User({ name, email, password });
+                    user.is_verified = true;
+                    user.save((err, save) => {
+                        if(err){
+                            console.log(err);
+                            console.log(user);
+                            return res.status(400).json({
+                                error: 'Sorry, something went wrong'
+                            });
+                        }
+                        const token = jwt.sign({ user: save._id }, process.env.JWT_AUTH_SECRET_KEY, { expiresIn: '7d' });
+                        const { _id, name, email, role } = save;
+                        return res.status(200).json({
+                            token,
+                            user: { _id, email, name, role }
+                        });
+                    })
+                }
+            })
+        })
+        .catch(err => {
+            console.log('comming to error');
+            console.log(err);
+            return res.status(400).json({
+                error: 'Facebook login failed. Try later'
+            })
+        })
 };

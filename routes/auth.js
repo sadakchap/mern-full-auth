@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { signup, signin, signout, activateUser, sendPasswordResetEmail, resetUserPassword, googleLoginController } = require('../controllers/auth');
+const { signup, signin, signout, activateUser, sendPasswordResetEmail, resetUserPassword, googleLoginController, facebookLoginController } = require('../controllers/auth');
 const { validSignup, validSignin, validForgotPassword, validResetPassword } = require('../helpers/valid');
 
 router.post('/signup', validSignup, signup);
@@ -13,7 +13,7 @@ router.put('/password/reset', validResetPassword, resetUserPassword);
 
 // social login
 router.post('/googlelogin', googleLoginController);
-
+router.post('/facebooklogin', facebookLoginController);
 
 router.get('/test', (req, res) => {
     return res.status(200).json({
