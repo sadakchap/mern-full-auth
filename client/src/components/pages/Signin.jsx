@@ -4,7 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { authenticate, isAuth } from '../../helpers/auth';
 import axios from 'axios';
 import { Redirect, useHistory } from 'react-router-dom';
-
+import { GoogleLogin } from 'react-google-login';
 
 const Signin = () => {
     const [formData, setFormData] = useState({
@@ -21,6 +21,28 @@ const Signin = () => {
             [name]: e.target.value
         })
     };
+
+    const informParent = response => {
+        authenticate(response, () => {
+            isAuth() && isAuth().role === 1 ? <Redirect to="/admin" /> : <Redirect to="/private" />
+        })
+    }
+
+    const responseGoogle = response => {
+        console.log(response);
+        sendGoogleToken(response.tokenId)
+    }
+
+    // send google token
+    const sendGoogleToken = tokenId => {
+        axios.post(`${process.env.REACT_APP_API_URL}/googlelogin`, { idToken: tokenId })
+            .then(res => {
+                informParent(res);
+            })
+            .catch(err => {
+                toast.error('Google login error');
+            })
+    }
 
     const handleSubmit = e => {
         e.preventDefault();
@@ -87,7 +109,21 @@ const Signin = () => {
                                 </div>
                             </div>
                             <div className="flex flex-col items-center">
+                                
+                                <GoogleLogin 
+                                    clientId={`${process.env.REACT_APP_GOOGLE_CLIENT_ID}`}
+                                    onSuccess={responseGoogle}
+                                    onFailure={responseGoogle}
+                                    cookiePolicy={'single_host_origin'}
+                                    render={ renderProps => (
+                                        <button onClick={renderProps.onClick} disabled={renderProps.disabled} className='w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow focus:shadow-sm focus:shadow-outline mt-5' >Sign In with Google</button>
+                                    )}
+                                ></GoogleLogin>
+
                                 <a href="/signup" className="w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow focus:shadow-sm focus:shadow-outline mt-5">Sign Up</a>
+
+                                
+
                             </div>
                         </form>
                     </div>

@@ -212,3 +212,48 @@ exports.resetUserPassword = (req, res) => {
     })
 
 };
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT)
+
+exports.googleLoginController = (req, res) => {
+    const { idToken } = req.body;
+    // verify token
+    client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT })
+    .then( response => {
+        const { email_verified, name, email } = response.payload;
+        // check if email is verified 
+        if(email_verified){
+            User.findOne({ email }).exec((err, user) => {
+                // find if this email user already
+                if(user){
+                    const token = jwt.sign({ user: user._id }, process.env.JWT_AUTH_SECRET_KEY, { expiresIn: '7d' });
+                    const { _id, name, email, role } = user;
+                    return res.status(200).json({
+                        token,
+                        user: { _id, email, name, role }
+                    });
+                }else{
+                    let password = email + process.env.JWT_AUTH_SECRET_KEY;
+                    user = new User({ name, email, password });
+                    user.save((err, save) => {
+                        if(err){
+                            return res.status(400).json({
+                                error: 'Sorry, something went wrong'
+                            });
+                        }
+                        const token = jwt.sign({ user: save._id }, process.env.JWT_AUTH_SECRET_KEY, { expiresIn: '7d' });
+                        const { _id, name, email, role } = save;
+                        return res.status(200).json({
+                            token,
+                            user: { _id, email, name, role }
+                        });
+                    })
+                }
+            })
+        }else{
+            return res.status(400).json({
+                error: 'Google login failed, try again!'
+            })
+        }
+    })
+};
