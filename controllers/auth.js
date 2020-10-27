@@ -4,6 +4,7 @@ const expressJwt = require('express-jwt');
 const { validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const nodemailer = require('nodemailer');
+const _ = require('lodash');
 
 // create transporter
 const transporter = nodemailer.createTransport({
@@ -164,4 +165,50 @@ exports.sendPasswordResetEmail = (req, res) => {
             });
         });
     });
+};
+
+exports.resetUserPassword = (req, res) => {
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+        return res.status(400).json({
+            error: errors.array()[0]["msg"]
+        });
+    }
+
+    const { newPassword, resetPasswordLink } = req.body;
+    jwt.verify(resetPasswordLink, process.env.JWT_RESET_PASSWORD_SECRET_KEY, function (err, decoded) {
+        if(err){
+            return res.status(400).json({
+                error: 'Reset token expired, Please regenerate reset link'
+            });
+        }
+        
+        User.findOne({ resetPasswordLink }, (err, user) => {
+            if(err || !user){
+                return res.status(400).json({
+                    error: 'Sorry, something went wrong. Please renegerate reset link'
+                });
+            }
+
+            const updateFields = {
+                resetPasswordLink: '',
+                password: newPassword
+            }
+
+            user = _.extend(user, updateFields);
+            user.save((err, result) => {
+                if(err){
+                    return res.status(400).json({
+                        error: 'Sorry, something went wrong. Please renegerate reset link'
+                    });
+                }
+                return res.status(201).json({
+                    message: 'Password Reset Successfull, Please login!'
+                })
+            })
+
+        })
+
+    })
+
 };
